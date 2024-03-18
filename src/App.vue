@@ -18,6 +18,7 @@ export default {
       const currentTicker = {
         name: this.ticker,
         price: "-",
+        id: crypto.randomUUID(),
       };
       this.tickers.push(currentTicker);
       const intervalId = setInterval(async () => {
@@ -35,8 +36,8 @@ export default {
       this.ticker = "";
     },
 
-    tickerRemove(t) {
-      this.tickers = this.tickers.filter((el) => el !== id);
+    tickerRemove(id) {
+      this.tickers = this.tickers.filter((el) => el.id !== id);
     },
 
     normalizeGraph() {
@@ -177,7 +178,7 @@ export default {
             </div>
             <div class="w-full border-t border-gray-200"></div>
             <button
-              @click.stop="tickerRemove(t)"
+              @click.stop="tickerRemove(t.id)"
               class="flex items-center justify-center font-medium w-full bg-gray-100 px-4 py-4 sm:px-6 text-md text-gray-500 hover:text-gray-600 hover:bg-gray-200 hover:opacity-20 transition-all focus:outline-none"
             >
               <svg
