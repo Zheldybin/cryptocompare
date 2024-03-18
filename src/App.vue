@@ -7,16 +7,20 @@ export default {
       tickers: [],
       sel: null,
       graph: [],
+      tokenList: {},
     };
   },
   methods: {
     add() {
+      if (this.isTickersDuplicate) {
+        return;
+      }
       const currentTicker = {
         name: this.ticker,
         price: "-",
       };
       this.tickers.push(currentTicker);
-      setInterval(async () => {
+      const intervalId = setInterval(async () => {
         const f = await fetch(
           `https://min-api.cryptocompare.com/data/price?fsym=${currentTicker.name}&tsyms=USD&api_key=0318bef673054479d634529380877ded165dd90453db401d9533e5a3c2d8b5b2`
         );
@@ -31,7 +35,7 @@ export default {
       this.ticker = "";
     },
 
-    tickerRemove(id) {
+    tickerRemove(t) {
       this.tickers = this.tickers.filter((el) => el !== id);
     },
 
@@ -47,6 +51,45 @@ export default {
       this.sel = ticker;
       this.graph = [];
     },
+
+    async getTokens() {
+      try {
+        const response = await fetch(
+          "https://min-api.cryptocompare.com/data/all/coinlist?summary=true"
+        );
+        const data = await response.json();
+        this.tokenList = data.Data;
+      } catch (e) {}
+    },
+
+    prependTicker(ticker) {
+      this.ticker = ticker.Symbol;
+    },
+  },
+
+  computed: {
+    getSimillarToken() {
+      const arr = Object.values(this.tokenList);
+
+      const res = arr.filter((el) => {
+        return (
+          el.Symbol.toLowerCase().includes(this.ticker.toLowerCase()) ||
+          el.FullName.toLowerCase().includes(this.ticker.toLowerCase())
+        );
+      });
+
+      return res.slice(0, 4);
+    },
+
+    isTickersDuplicate() {
+      return this.tickers.some(
+        (el) => el.name.toLowerCase() === this.ticker.toLowerCase()
+      );
+    },
+  },
+
+  created() {
+    this.getTokens();
   },
 };
 </script>
@@ -81,27 +124,16 @@ export default {
               class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap"
             >
               <span
+                @click="prependTicker(item)"
+                v-for="item in getSimillarToken"
                 class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
               >
-                BTC
-              </span>
-              <span
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                DOGE
-              </span>
-              <span
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                BCH
-              </span>
-              <span
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                CHD
+                {{ item.Symbol }}
               </span>
             </div>
-            <div class="text-sm text-red-600">Такой тикер уже добавлен</div>
+            <div v-if="isTickersDuplicate" class="text-sm text-red-600">
+              Такой тикер уже добавлен
+            </div>
           </div>
         </div>
         <button
@@ -210,5 +242,3 @@ export default {
     </div>
   </div>
 </template>
-
-<style></style>
