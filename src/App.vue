@@ -11,6 +11,20 @@ export default {
     };
   },
   methods: {
+    subscribeToUpdates(tickerName) {
+      setInterval(async () => {
+        const f = await fetch(
+          `https://min-api.cryptocompare.com/data/price?fsym=${tickerName}&tsyms=USD&api_key=0318bef673054479d634529380877ded165dd90453db401d9533e5a3c2d8b5b2`
+        );
+        const data = await f.json();
+        this.tickers.find((t) => t.name === tickerName).price =
+          data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
+        if (this.sel?.name === tickerName) {
+          this.graph.push(data.USD);
+        }
+      }, 3000);
+    },
+
     add() {
       if (this.isTickersDuplicate) {
         return;
@@ -20,24 +34,18 @@ export default {
         price: "-",
         id: crypto.randomUUID(),
       };
+
       this.tickers.push(currentTicker);
-      const intervalId = setInterval(async () => {
-        const f = await fetch(
-          `https://min-api.cryptocompare.com/data/price?fsym=${currentTicker.name}&tsyms=USD&api_key=0318bef673054479d634529380877ded165dd90453db401d9533e5a3c2d8b5b2`
-        );
-        const data = await f.json();
-        this.tickers.find((t) => t.name === currentTicker.name).price =
-          data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
-        if (this.sel?.name === currentTicker.name) {
-          this.graph.push(data.USD);
-        }
-        // newTicker.price = data.USD;
-      }, 3000);
+
+      localStorage.setItem("cryptonomicon-item", JSON.stringify(this.tickers));
+      this.subscribeToUpdates(currentTicker.name);
+
       this.ticker = "";
     },
 
     tickerRemove(id) {
       this.tickers = this.tickers.filter((el) => el.id !== id);
+      localStorage.setItem("cryptonomicon-item", JSON.stringify(this.tickers));
     },
 
     normalizeGraph() {
@@ -90,6 +98,15 @@ export default {
   },
 
   created() {
+    const tikersData = localStorage.getItem("cryptonomicon-item");
+
+    if (tikersData) {
+      this.tickers = JSON.parse(tikersData);
+      this.tickers.forEach((ticker) => {
+        this.subscribeToUpdates(ticker.name);
+      });
+    }
+
     this.getTokens();
   },
 };
